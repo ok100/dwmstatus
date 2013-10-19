@@ -29,15 +29,13 @@ char *get_mem(char *buf)
 	FILE *f;
 	float total, free, buffers, cached, mem;
 
-	if((f = fopen("/proc/meminfo", "r")) != NULL) {
+	if ((f = fopen("/proc/meminfo", "r")) != NULL) {
 		fscanf(f, "MemTotal: %f kB\nMemFree: %f kB\nBuffers: %f kB\nCached: %f kB\n",
 			&total, &free, &buffers, &cached);
 		fclose(f);
 		mem = (total - free - buffers - cached) / total;
-	}
-	else {
+	} else
 		mem = 0.;
-	}
 	sprintf(buf, "%cMem\x02%.2f", '\x01', mem);
 	return buf;
 }
@@ -48,28 +46,22 @@ char *get_bat(char *buf)
 	float now, full;
 	int ac;
 
-	if((f = fopen(BATTERY_NOW, "r")) != NULL) {
+	if ((f = fopen(BATTERY_NOW, "r")) != NULL) {
 		fscanf(f, "%f", &now);
 		fclose(f);
-	}
-	else {
+	} else
 		now = 0.;
-	}
-	if((f = fopen(BATTERY_FULL, "r")) != NULL) {
+	if ((f = fopen(BATTERY_FULL, "r")) != NULL) {
 		fscanf(f, "%f", &full);
 		fclose(f);
-	}
-	else {
+	} else
 		full = 0.;
-	}
-	if((f = fopen(ON_AC, "r")) != NULL) {
+	if ((f = fopen(ON_AC, "r")) != NULL) {
 		fscanf(f, "%d", &ac);
 		fclose(f);
-	}
-	else {
+	} else
 		ac = 0;
-	}
-	if(ac)
+	if (ac)
 		sprintf(buf, "%cAc\x02%.2f", '\x01', now / full);
 	else
 		sprintf(buf, "%cBat\x02%.2f", '\x01', now / full);
@@ -81,15 +73,13 @@ long get_total_jiffies()
 	FILE *f;
 	long j[7], total;
 
-	if((f = fopen("/proc/stat", "r")) != NULL) {
+	if ((f = fopen("/proc/stat", "r")) != NULL) {
 		fscanf(f, "cpu %ld %ld %ld %ld %ld %ld %ld",
 			&j[0], &j[1], &j[2], &j[3], &j[4], &j[5], &j[6]);
 		total = j[0] + j[1] + j[2] + j[3] + j[4] + j[5] + j[6];
 		fclose(f);
-	}
-	else {
+	} else
 		total = 0;
-	}
 	return total;
 }
 
@@ -98,14 +88,12 @@ long get_work_jiffies()
 	FILE *f;
 	long j[3], work;
 
-	if((f = fopen("/proc/stat", "r")) != NULL) {
+	if ((f = fopen("/proc/stat", "r")) != NULL) {
 		fscanf(f, "cpu %ld %ld %ld", &j[0], &j[1], &j[2]);
 		work = j[0] + j[1] + j[2];
 		fclose(f);
-	}
-	else {
+	} else
 		work = 0;
-	}
 	return work;
 }
 
@@ -119,7 +107,7 @@ char *get_cpu(char *buf, long total_jiffies, long work_jiffies)
 	work_jiffies_now = get_work_jiffies();
 	work_over_period = work_jiffies_now - work_jiffies;
 	total_over_period = total_jiffies_now - total_jiffies;
-	if(total_over_period > 0)
+	if (total_over_period > 0)
 		cpu = ((float)work_over_period / (float)total_over_period);
 	else
 		cpu = 0.0;
@@ -133,10 +121,10 @@ int is_up(char *device)
 	char fn[50], state[5];
 
 	sprintf(fn, "/sys/class/net/%s/operstate", device);
-	if((f = fopen(fn, "r")) != NULL) {
+	if ((f = fopen(fn, "r")) != NULL) {
 		fscanf(f, "%s", state);
 		fclose(f);
-		if(strcmp(state, "up") == 0)
+		if (strcmp(state, "up") == 0)
 			return 1;
 	}
 	return 0;
@@ -147,10 +135,9 @@ char *get_net(char *buf)
 	int skfd;
 	struct wireless_info *winfo;
 	
-	if(is_up(WIRED_DEVICE)) {
+	if (is_up(WIRED_DEVICE))
 		sprintf(buf, "%cEth\x02On", '\x01');
-	}
-	else if(is_up(WIRELESS_DEVICE)) {
+	else if (is_up(WIRELESS_DEVICE)) {
 		winfo = malloc(sizeof(struct wireless_info));
 		memset(winfo, 0, sizeof(struct wireless_info));
 		skfd = iw_sockets_open();
@@ -167,10 +154,8 @@ char *get_net(char *buf)
 			}
 		}
 		free(winfo);
-	}
-	else {
+	} else
 		sprintf(buf, "%cEth\x02No", '\x01');
-	}
 	return buf;
 }
 
@@ -183,9 +168,8 @@ char *get_mpd(char *buf)
 	struct mpd_song *song;
 
 	conn = mpd_connection_new(NULL, 0, 30000);
-	if(mpd_connection_get_error(conn)) {
+	if (mpd_connection_get_error(conn))
 		strcpy(buf, "");
-	}
 	else {
 	 	mpd_command_list_begin(conn, true);
 		mpd_send_status(conn);
@@ -199,10 +183,8 @@ char *get_mpd(char *buf)
 			title = mpd_song_get_tag(song, MPD_TAG_TITLE, 0);
 			sprintf(buf, "\x01%s\x02%s", artist, title);
 			mpd_song_free(song);
-		}
-		else {
+		} else
 			strcpy(buf, "");
-		}
 		mpd_response_finish(conn);
 	}
 	mpd_connection_free(conn);
@@ -216,7 +198,7 @@ char *get_vol(char *buf)
 	char vol[4];
 	
 	sprintf(fn, "%s/.volume", getenv("HOME"));
-	if((f = fopen(fn, "r")) == NULL) {
+	if ((f = fopen(fn, "r")) == NULL) {
 		sprintf(buf, "N/A");
 		return buf;
 	}
@@ -233,7 +215,7 @@ int main(void)
 	char status[512], time[32], net[64], mpd[128], vol[16], bat[16], cpu[16], mem[16];
 	long total_jiffies, work_jiffies;
 
-	if((dpy = XOpenDisplay(NULL)) == NULL) {
+	if ((dpy = XOpenDisplay(NULL)) == NULL) {
 		fprintf(stderr, "error: could not open display\n");
 		return 1;
 	}
